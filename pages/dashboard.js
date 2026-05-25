@@ -34,9 +34,8 @@ export default function DashboardPage() {
   const [statusMessage, setStatusMessage] = useState('')
   const [statusType, setStatusType] = useState('success')
   const [photo, setPhoto] = useState(null)
-  const [dailyUsage, setDailyUsage] = useState({ count: 0, resetAt: null })
-  const [isBlocked, setIsBlocked] = useState(false)
   const [hasCamera, setHasCamera] = useState(false)
+  const [videoStream, setVideoStream] = useState(null)
   const [loadingHistory, setLoadingHistory] = useState(false)
   const fileInputRef = useRef(null)
   const router = useRouter()
@@ -99,74 +98,6 @@ export default function DashboardPage() {
     }
   }
 
-  const DAILY_LIMIT = 1
-
-  const getDailyUsageKey = () => {
-    if (typeof window === 'undefined') return 'dailyUsage_guest'
-    return user?.id ? `dailyUsage_${user.id}` : 'dailyUsage_guest'
-  }
-
-  const saveDailyUsage = nextUsage => {
-    setDailyUsage(nextUsage)
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(getDailyUsageKey(), JSON.stringify(nextUsage))
-    }
-    setIsBlocked(nextUsage.count >= DAILY_LIMIT && nextUsage.resetAt && Date.now() < nextUsage.resetAt)
-  }
-
-  const resetDailyUsage = () => {
-    saveDailyUsage({ count: 0, resetAt: null })
-  }
-
-  const loadDailyUsage = () => {
-    if (typeof window === 'undefined') return
-    const raw = window.localStorage.getItem(getDailyUsageKey())
-    if (!raw) {
-      resetDailyUsage()
-      return
-    }
-    try {
-      const parsed = JSON.parse(raw)
-      const now = Date.now()
-      if (parsed.resetAt && now >= parsed.resetAt) {
-        resetDailyUsage()
-      } else {
-        saveDailyUsage({
-          count: parsed.count || 0,
-          resetAt: parsed.resetAt || null,
-        })
-      }
-    } catch {
-      resetDailyUsage()
-    }
-  }
-
-  const incrementDailyUsage = () => {
-    const now = Date.now()
-    setDailyUsage(prev => {
-      const count = prev.count + 1
-      const resetAt = count >= DAILY_LIMIT ? now + 24 * 60 * 60 * 1000 : prev.resetAt
-      const nextUsage = { count, resetAt }
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(getDailyUsageKey(), JSON.stringify(nextUsage))
-      }
-      setIsBlocked(count >= DAILY_LIMIT && resetAt && now < resetAt)
-      return nextUsage
-    })
-  }
-
-  const hasReachedDailyLimit = () => {
-    return dailyUsage.count >= DAILY_LIMIT && dailyUsage.resetAt && Date.now() < dailyUsage.resetAt
-  }
-
-  const formatRemainingTime = () => {
-    if (!dailyUsage.resetAt) return ''
-    const remainingMs = dailyUsage.resetAt - Date.now()
-    if (remainingMs <= 0) return ''
-    const hours = Math.floor(remainingMs / (1000 * 60 * 60))
-    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60))
-    return `${hours}h ${minutes}m`
-  }
 
   const saveScanResult = async result => {
     if (!db || !user?.id) return
@@ -187,15 +118,6 @@ export default function DashboardPage() {
 
   const openCamera = async () => {
     setCameraError('')
-    if (hasReachedDailyLimit()) {
-      const remaining = formatRemainingTime()
-      const message = remaining
-        ? `Votre limite quotidienne est atteinte. Réessayez dans ${remaining}.`
-        : 'Votre limite quotidienne est atteinte. Réessayez dans les prochaines 24 heures.'
-      setStatusMessage(message)
-      setStatusType('error')
-      return
-    }
 
     if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       try {
@@ -203,6 +125,7 @@ export default function DashboardPage() {
           video: { facingMode: 'environment' },
         })
         streamRef.current = stream
+        setVideoStream(stream)
         setActiveTab('camera')
       } catch (error) {
         setCameraError(
@@ -219,6 +142,7 @@ export default function DashboardPage() {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
     }
+    setVideoStream(null)
     setActiveTab('home')
   }
 
@@ -239,16 +163,6 @@ export default function DashboardPage() {
   }
 
   const handleFileChange = async event => {
-    if (hasReachedDailyLimit()) {
-      const remaining = formatRemainingTime()
-      const message = remaining
-        ? `Votre limite quotidienne est atteinte. Réessayez dans ${remaining}.`
-        : 'Votre limite quotidienne est atteinte. Réessayez dans les prochaines 24 heures.'
-      setStatusMessage(message)
-      setStatusType('error')
-      return
-    }
-
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -304,7 +218,6 @@ export default function DashboardPage() {
 
       await saveScanResult(result)
       await fetchHistory()
-      incrementDailyUsage()
     }, 1500)
   }
 
@@ -335,19 +248,21 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (activeTab === 'camera' && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current
-      videoRef.current.play().catch(error => {
-        console.warn('Erreur lecture vidéo :', error)
-        setCameraError('Impossible de démarrer l’aperçu caméra.')
-      })
+    if (activeTab === 'camera' && videoStream && videoRef.current) {
+      videoRef.current.srcObject = videoStream
+      const playPromise = videoRef.current.play()
+      if (playPromise) {
+        playPromise.catch(error => {
+          console.warn('Erreur lecture vidéo :', error)
+          setCameraError('Impossible de démarrer l’aperçu caméra. Votre navigateur peut bloquer la lecture automatique.')
+        })
+      }
     }
-  }, [activeTab])
+  }, [activeTab, videoStream])
 
   useEffect(() => {
     if (!user) return
     fetchHistory()
-    loadDailyUsage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -412,16 +327,11 @@ export default function DashboardPage() {
                       </p>
                       <button
                         onClick={openCamera}
-                        disabled={hasReachedDailyLimit()}
-                        className={`rounded-2xl px-6 py-3 text-sm font-semibold text-white transition shadow-lg shadow-coral/20 ${hasReachedDailyLimit() ? 'bg-slate-300 cursor-not-allowed text-slate-600' : 'bg-coral hover:bg-coral-dark'}`}
+                        className="rounded-2xl bg-coral px-6 py-3 text-sm font-semibold text-white transition shadow-lg shadow-coral/20 hover:bg-coral-dark"
                       >
                         Scanner un repas
                       </button>
-                      <p className="mt-3 text-sm text-slate-500">
-                        {hasReachedDailyLimit()
-                          ? `Limite atteinte. Réessayez dans ${formatRemainingTime()}.`
-                          : 'Offre gratuite : 1 scan par jour.'}
-                      </p>
+                      <p className="mt-3 text-sm text-slate-500">Scannez autant de repas que vous voulez.</p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -533,6 +443,12 @@ export default function DashboardPage() {
                     playsInline
                     muted
                     autoPlay
+                    onLoadedMetadata={() => {
+                      videoRef.current?.play().catch(error => {
+                        console.warn('Erreur lecture vidéo après metadata :', error)
+                        setCameraError('Impossible de lire l’aperçu caméra après démarrage.')
+                      })
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>
@@ -555,6 +471,9 @@ export default function DashboardPage() {
                       Annuler
                     </button>
                   </div>
+                  {cameraError && (
+                    <p className="mt-4 text-sm text-red-300">{cameraError}</p>
+                  )}
                 </div>
               </div>
             </div>
