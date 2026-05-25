@@ -1,8 +1,10 @@
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export default function SubscribePage() {
   const router = useRouter()
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900">
@@ -46,10 +48,27 @@ export default function SubscribePage() {
             </div>
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={async () => {
+                try {
+                  setLoadingCheckout(true)
+                  const res = await fetch('/api/create-checkout-session', { method: 'POST' })
+                  const data = await res.json()
+                  if (data?.url) {
+                    window.location.href = data.url
+                  } else {
+                    alert(data?.error || 'Erreur lors de la création du paiement.')
+                  }
+                } catch (err) {
+                  console.error('Checkout error:', err)
+                  alert('Impossible de démarrer le paiement.')
+                } finally {
+                  setLoadingCheckout(false)
+                }
+              }}
               className="mt-8 w-full rounded-2xl bg-coral text-white py-3 text-sm font-semibold transition hover:bg-coral-dark"
+              disabled={loadingCheckout}
             >
-              S’abonner au Pro
+              {loadingCheckout ? 'Redirection vers le paiement...' : 'S’abonner au Pro'}
             </button>
           </div>
         </div>

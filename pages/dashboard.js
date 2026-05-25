@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [photo, setPhoto] = useState(null)
   const [hasCamera, setHasCamera] = useState(false)
   const [videoStream, setVideoStream] = useState(null)
+  const [capturing, setCapturing] = useState(false)
   const [loadingHistory, setLoadingHistory] = useState(false)
   const fileInputRef = useRef(null)
   const router = useRouter()
@@ -146,20 +147,90 @@ export default function DashboardPage() {
     setActiveTab('home')
   }
 
-  const capturePhoto = () => {
-    if (!videoRef.current) return
+  const capturePhoto = async () => {
+    if (!videoRef.current && !streamRef.current) {
+      setCameraError('Aucun aperçu vidéo disponible.')
+      return
+    }
 
-    const canvas = document.createElement('canvas')
-    canvas.width = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
-    const context = canvas.getContext('2d')
-    if (!context) return
+    setCapturing(true)
+    try {
+      const video = videoRef.current
 
-    context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
-    const imageData = canvas.toDataURL('image/jpeg', 0.9)
-    setPhoto(imageData)
-    handleScan(imageData)
-    stopCamera()
+      // Si on a un élément vidéo, attendre ses métadonnées si besoin
+      if (video && (!video.videoWidth || !video.videoHeight)) {
+        await new Promise(resolve => {
+          const onMeta = () => {
+            video.removeEventListener('loadedmetadata', onMeta)
+            resolve()
+          }
+          video.addEventListener('loadedmetadata', onMeta)
+          // fallback court
+          setTimeout(() => {
+            video.removeEventListener('loadedmetadata', onMeta)
+            resolve()
+          }, 700)
+        })
+      }
+
+      // 1) Essayer via canvas
+      if (video) {
+        const width = video.videoWidth || video.clientWidth || 640
+        const height = video.videoHeight || video.clientHeight || 480
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const context = canvas.getContext('2d')
+        if (context) {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height)
+          const imageData = canvas.toDataURL('image/jpeg', 0.9)
+          // si imageData semble valide
+          if (imageData && imageData.length > 1000) {
+            setPhoto(imageData)
+            handleScan(imageData)
+            stopCamera()
+            setCapturing(false)
+            return
+          }
+        }
+      }
+
+      // 2) Fallback ImageCapture (si disponible)
+      if (streamRef.current && window.ImageCapture) {
+        try {
+          const track = streamRef.current.getVideoTracks()[0]
+          if (track) {
+            const imageCapture = new window.ImageCapture(track)
+            const blob = await imageCapture.takePhoto()
+            const reader = new FileReader()
+            const dataUrl = await new Promise((resolve, reject) => {
+              reader.onloadend = () => resolve(reader.result)
+              reader.onerror = reject
+              reader.readAsDataURL(blob)
+            })
+            if (typeof dataUrl === 'string') {
+              setPhoto(dataUrl)
+              handleScan(dataUrl)
+              stopCamera()
+              setCapturing(false)
+              return
+            }
+          }
+        } catch (err) {
+          console.warn('ImageCapture fallback failed:', err)
+        }
+      }
+
+      // 3) Dernier recours : ouvrir la galerie / input file pour capturer
+      setCameraError('La capture automatique a échoué. Veuillez importer une photo.')
+      fileInputRef.current?.click()
+    } catch (err) {
+      console.error('Erreur capture photo :', err)
+      setCameraError('Échec de la capture. Réessayez.')
+    } finally {
+      setCapturing(false)
+    }
   }
 
   const handleFileChange = async event => {
@@ -460,9 +531,20 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <button
                       onClick={capturePhoto}
-                      className="rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2d9b7f]"
+                      disabled={capturing}
+                      className={`rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2d9b7f] ${capturing ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
-                      Prendre la photo
+                      {capturing ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin text-white mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          Capture...
+                        </>
+                      ) : (
+                        'Prendre la photo'
+                      )}
                     </button>
                     <button
                       onClick={stopCamera}
