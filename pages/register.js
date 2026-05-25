@@ -83,16 +83,15 @@ export default function RegisterPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="font-display text-slate-900 text-3xl mb-2">Compte créé !</h2>
+            <h2 className="font-display text-slate-900 text-3xl mb-2">Vérifiez votre email</h2>
             <p className="text-slate-600 text-sm mb-6">
-              Votre compte est prêt. Choisissez un abonnement ou connectez-vous pour commencer.
+              Un email de vérification de FoodTracker a été envoyé à <span className="font-semibold">{form.email}</span>.
+              Cliquez sur le lien dans ce message pour activer votre compte.
             </p>
+            <p className="text-slate-500 text-xs mb-6">Pensez à vérifier vos spams si vous ne voyez rien arriver.</p>
             <div className="flex flex-col gap-3">
-              <Link href="/subscribe" className="inline-flex items-center justify-center rounded-2xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral-dark">
-                Choisir un abonnement
-              </Link>
-              <Link href="/login" className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
-                Aller à la connexion
+              <Link href="/login" className="inline-flex items-center justify-center rounded-2xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral-dark">
+                Retour à la connexion
               </Link>
             </div>
           </div>

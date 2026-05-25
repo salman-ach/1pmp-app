@@ -203,10 +203,6 @@ export default function DashboardPage() {
           video: { facingMode: 'environment' },
         })
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-        }
         setActiveTab('camera')
       } catch (error) {
         setCameraError(
@@ -337,6 +333,16 @@ export default function DashboardPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'camera' && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current
+      videoRef.current.play().catch(error => {
+        console.warn('Erreur lecture vidéo :', error)
+        setCameraError('Impossible de démarrer l’aperçu caméra.')
+      })
+    }
+  }, [activeTab])
 
   useEffect(() => {
     if (!user) return
@@ -526,6 +532,7 @@ export default function DashboardPage() {
                     className="w-full h-full object-cover"
                     playsInline
                     muted
+                    autoPlay
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>

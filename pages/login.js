@@ -32,9 +32,13 @@ export default function LoginPage() {
     const { error } = await signIn({ email: form.email, password: form.password })
     setLoading(false)
     if (error) {
-      setError(error.message === 'Invalid login credentials'
-        ? 'Email ou mot de passe incorrect.'
-        : error.message)
+      if (error.message === 'Invalid login credentials') {
+        setError('Email ou mot de passe incorrect.')
+      } else if (error.message.toLowerCase().includes('email not confirmed')) {
+        setError('Votre adresse email n’a pas encore été vérifiée. Consultez votre boîte de réception.')
+      } else {
+        setError(error.message)
+      }
     } else {
       router.replace('/subscribe')
     }
