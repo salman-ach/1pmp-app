@@ -5,7 +5,7 @@ const sectionItems = [
   {
     title: 'Paramètres de l’application',
     description: 'Choisissez kg/lbs, calories/kilojoules, activez le mode sombre et gérez les notifications.',
-    href: '/settings',
+    href: '/settings-new',
   },
   {
     title: 'Aide & Tutoriels',
@@ -34,8 +34,8 @@ export default function MenuSupportPage() {
               <Link href="/menu" className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-primary/50 hover:text-primary">
                 Retour au menu
               </Link>
-              <Link href="/settings" className="inline-flex items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-white px-5 py-3 transition hover:bg-slate-900">
-                Ouvrir les paramètres
+              <Link href="/settings-new" className="inline-flex items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-white px-5 py-3 transition hover:bg-slate-900">
+                Gérer mes préférences
               </Link>
             </div>
           </div>

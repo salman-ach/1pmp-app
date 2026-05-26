@@ -7,9 +7,9 @@ import Logo from './Logo'
 
 const navItems = [
   { href: '/dashboard', label: 'Scan' },
-  { href: '/menu', label: 'Menu' },
-  { href: '/subscribe', label: 'Abonnement' },
-  { href: '/settings', label: 'Paramètres' },
+  { href: '/journal', label: 'Journal' },
+  { href: '/pro', label: 'Pro' },
+  { href: '/settings-new', label: 'Paramètres' },
 ]
 
 export default function Navbar() {
@@ -94,7 +94,7 @@ export default function Navbar() {
               <svg className="w-4 h-4 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className="hidden sm:inline">Déconnecter</span>
+              <span className="hidden sm:inline font-semibold">Déconnexion</span>
             </button>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function Navbar() {
                 }}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
               >
-                Déconnecter
+                Déconnexion sécurisée
               </button>
             </div>
           </div>

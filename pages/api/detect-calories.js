@@ -14,12 +14,11 @@ export default async function handler(req, res) {
           contents: [{
             parts: [
               {
-                text: `Tu es un expert en nutrition. Analyse attentivement cette photo et identifie exactement ce que tu vois.
-Sois très précis sur le nom du plat (ex: "Pain complet", "Msemen", "Poulet rôti", etc.)
-Ne devine pas si l'image est floue — donne quand même ta meilleure estimation.
-Réponds UNIQUEMENT en JSON valide sans markdown ni texte autour, avec ce format exact:
-{"plat":"nom exact de l'aliment visible","calories":nombre,"proteines":nombre,"glucides":nombre,"lipides":nombre}
-Valeurs numériques entières uniquement. Si ce n'est absolument pas de la nourriture, mets 0 partout.`
+                text: `Tu es un expert en nutrition. Analyse attentivement cette photo et identifie exactement l'aliment ou le plat visible.
+Sois précis sur le nom du plat (ex: "Dattes", "Pain complet", "Poulet rôti").
+Tu dois STRICTEMENT retourner un objet JSON correspondant à ce schéma, sans aucun texte explicatif autour :
+{"plat":"nom de l'aliment","calories":nombre,"proteines":nombre,"glucides":nombre,"lipides":nombre}
+Si ce n'est pas de la nourriture ou que tu ne vois rien, utilise exactement ce JSON : {"plat":"Aliment inconnu","calories":0,"proteines":0,"glucides":0,"lipides":0}`
               },
               {
                 inline_data: {
@@ -28,18 +27,39 @@ Valeurs numériques entières uniquement. Si ce n'est absolument pas de la nourr
                 }
               }
             ]
-          }]
+          }],
+          // Force l'API Gemini à cracher uniquement du pur JSON
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
         })
       }
     );
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
-    res.status(200).json(result);
+    
+    // Log pour debugger sur Vercel si besoin
+    console.log("Réponse brute de l'API:", JSON.stringify(data));
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!text) {
+      return res.status(200).json({ plat: "Aliment inconnu", calories: 0, proteines: 0, glucides: 0, lipides: 0 });
+    }
+
+    // Le texte étant forcé en JSON par l'API, le parse est désormais ultra-sûr
+    const result = JSON.parse(text.trim());
+    return res.status(200).json(result);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur analyse IA' });
+    console.error("Erreur complète détectée :", err);
+    // En cas de crash, on renvoie une structure saine pour éviter le blocage de l'application
+    return res.status(200).json({ 
+      plat: "Aliment inconnu", 
+      calories: 0, 
+      proteines: 0, 
+      glucides: 0, 
+      lipides: 0 
+    });
   }
 }

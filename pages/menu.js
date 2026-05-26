@@ -9,8 +9,8 @@ const menuSections = [
     sectionHref: '/menu/coeur',
     items: [
       {
-        title: 'Journal / Aujourd’hui',
-        description: 'Ajoutez vos repas, suivez vos calories restantes et visualisez vos macronutriments.',
+        title: 'Mon Journal Quotidien',
+        description: 'Suivez vos repas, calories et macronutriments en temps réel pour atteindre vos objectifs.',
         href: '/journal',
       },
       {
@@ -30,18 +30,18 @@ const menuSections = [
     items: [
       {
         title: 'Mes Objectifs',
-        description: 'Ajustez le poids cible, le rythme de perte ou de prise et recalculer automatiquement vos besoins.',
-        href: '/settings',
+        description: 'Ajustez le poids cible, le rythme de perte ou de prise et recalculez automatiquement vos besoins.',
+        href: '/settings-new',
       },
       {
         title: 'Mon Profil',
         description: 'Mettez à jour votre âge, taille, sexe et niveau d’activité physique.',
-        href: '/settings',
+        href: '/settings-new',
       },
       {
         title: 'Connexions & Appareils',
         description: 'Synchronisez votre application avec Apple Health, Google Fit et vos montres connectées.',
-        href: '/settings',
+        href: '/settings-new',
       },
     ],
   },
@@ -66,7 +66,7 @@ const menuSections = [
       {
         title: 'Paramètres de l’application',
         description: 'Choisissez kg/lbs, calories/kilojoules, activez le mode sombre et gérez les notifications.',
-        href: '/settings',
+        href: '/settings-new',
       },
       {
         title: 'Aide & Tutoriels',
@@ -169,7 +169,7 @@ export default function MenuPage() {
                             onClick={() => handleSelectMenu(item.title)}
                             className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
                           >
-                            Voir
+                            À venir
                           </button>
                         )}
                         <span className="text-[11px] uppercase tracking-[0.28em] text-slate-400">Menu</span>
