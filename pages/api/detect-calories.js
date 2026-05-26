@@ -5,7 +5,6 @@ export default async function handler(req, res) {
   }
 
   try {
-
     const { imageBase64 } = req.body;
 
     if (!imageBase64) {
@@ -29,7 +28,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await fetch('/api/detect-calories'
+    // Correction de la ligne fetch ci-dessous (suppression du résidu de texte)
+    const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
@@ -46,7 +46,7 @@ Tu es un expert en nutrition.
 
 Analyse attentivement cette photo et identifie exactement l'aliment ou le plat visible.
 
-Tu dois STRICTEMENT retourner uniquement un JSON valide.
+Tu devez STRICTEMENT retourner uniquement un objet JSON valide, sans aucun texte explicatif ou formatage Markdown autour.
 
 Format obligatoire :
 {
@@ -57,7 +57,7 @@ Format obligatoire :
   "lipides":0
 }
 
-Si aucun aliment n'est visible :
+Si aucun aliment n'est visible ou si la photo n'est pas claire :
 {
   "plat":"Aliment inconnu",
   "calories":0,
@@ -89,7 +89,6 @@ Si aucun aliment n'est visible :
 
     // Erreur Google Gemini
     if (data.error) {
-
       console.error("ERREUR GEMINI =", data.error);
 
       return res.status(200).json({
@@ -104,7 +103,6 @@ Si aucun aliment n'est visible :
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
-
       console.error("Aucun texte retourné");
 
       return res.status(200).json({
@@ -117,11 +115,9 @@ Si aucun aliment n'est visible :
     }
 
     const result = JSON.parse(text);
-
     return res.status(200).json(result);
 
   } catch (err) {
-
     console.error("CRASH =", err);
 
     return res.status(200).json({
