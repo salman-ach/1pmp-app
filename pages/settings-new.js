@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import ProtectedLayout from '../components/ProtectedLayout'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/firebaseClient'
+import { supabase } from '../lib/supabaseClient'
 import { Settings, Bell, Lock, Moon, LogOut, ArrowLeft, Save, AlertCircle } from 'lucide-react'
 
 const S = { bg: '#0a1209', bg2: '#0d1f0e', card: '#0f1a10', border: 'rgba(74,222,128,0.12)', acc: '#4ade80', text: '#f0fdf4', muted: '#4a6b4a', blue: '#60a5fa', red: '#ef4444' }
