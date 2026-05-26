@@ -14,9 +14,12 @@ export default async function handler(req, res) {
           contents: [{
             parts: [
               {
-                text: `Analyse cette image de nourriture et réponds UNIQUEMENT en JSON valide sans markdown, avec exactement ce format:
-{"plat":"nom du plat","calories":nombre,"proteines":nombre,"glucides":nombre,"lipides":nombre}
-Donne des valeurs numériques entières. Si ce n'est pas de la nourriture, mets toutes les valeurs à 0.`
+                text: `Tu es un expert en nutrition. Analyse attentivement cette photo et identifie exactement ce que tu vois.
+Sois très précis sur le nom du plat (ex: "Pain complet", "Msemen", "Poulet rôti", etc.)
+Ne devine pas si l'image est floue — donne quand même ta meilleure estimation.
+Réponds UNIQUEMENT en JSON valide sans markdown ni texte autour, avec ce format exact:
+{"plat":"nom exact de l'aliment visible","calories":nombre,"proteines":nombre,"glucides":nombre,"lipides":nombre}
+Valeurs numériques entières uniquement. Si ce n'est absolument pas de la nourriture, mets 0 partout.`
               },
               {
                 inline_data: {
