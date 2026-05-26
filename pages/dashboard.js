@@ -256,41 +256,37 @@ export default function DashboardPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleScan = async imageData => {
-    setIsScanning(true)
-    setCameraError('')
+  const handleScan = async (imageData) => {
+  setIsScanning(true)
+  setCameraError('')
 
-    const choices = [
-      {
-        name: 'Salade César',
-        kcal: 350,
-        prot: 18,
-        image: imageData || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
-      },
-      {
-        name: 'Bowl de Quinoa & Saumon',
-        kcal: 485,
-        prot: 32,
-        image: imageData || 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800',
-      },
-      {
-        name: 'Poulet grillé & légumes',
-        kcal: 420,
-        prot: 38,
-        image: imageData || 'https://images.unsplash.com/photo-1604908177520-a3f0accc15c4?w=800',
-      },
-    ]
-    const result = choices[Math.floor(Math.random() * choices.length)]
+  try {
+    const response = await fetch('/api/detect-calories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: imageData })
+    })
 
-    setTimeout(async () => {
-      setScanResult(result)
-      setIsScanning(false)
-      setActiveTab('result')
+    const data = await response.json()
 
-      await saveScanResult(result)
-      await fetchHistory()
-    }, 1500)
+    if (data.error) throw new Error(data.error)
+
+    setScanResult({
+      name:  data.plat,
+      kcal:  data.calories,
+      prot:  data.proteines,
+      gluc:  data.glucides,
+      lip:   data.lipides,
+      image: imageData
+    })
+
+  } catch (err) {
+    setCameraError("Impossible d'analyser l'image. Réessayez.")
+    console.error(err)
+  } finally {
+    setIsScanning(false)
   }
+}
 
   const resetScanner = () => {
     if (streamRef.current) {
